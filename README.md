@@ -282,7 +282,7 @@ Route 53 and ACM are optional until you purchase the domain; no domain credentia
 <p align="center"><img src="screenshots/15-Load-balancer.png" alt="Application Load Balancer" width="700"></p>
 
 **Check Route 53 is resolving your custom domain to the ALB:**
-<p align="center"><img src="screenshots/nitesh.shop" alt="Route 53 hosted zone resolving nitesh.shop to the ALB, and https://nitesh.shop loading in the browser" width="700"></p>
+<p align="center"><img src="screenshots/nitesh.shop.png" alt="Route 53 hosted zone resolving nitesh.shop to the ALB, and https://nitesh.shop loading in the browser" width="700"></p>
 
 Confirm this two ways before trusting the browser alone:
 
