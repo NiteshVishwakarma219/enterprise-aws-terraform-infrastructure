@@ -1,0 +1,22 @@
+{
+  "commands": [
+    "echo ==== PORTS ====",
+    "sudo ss -lntp",
+    "echo ==== DOCKER ====",
+    "sudo docker ps -a",
+    "echo ==== NGINX TEST ====",
+    "sudo nginx -t",
+    "echo ==== PORT 80 ====",
+    "curl -sS -o /tmp/health.txt -w HTTP_CODE=%{http_code} http://127.0.0.1:80/api/health || true",
+    "echo ==== RESPONSE ====",
+    "sudo cat /tmp/health.txt 2>/dev/null || true",
+    "echo ==== BACKEND ====",
+    "curl -sS -o /tmp/backend.txt -w BACKEND_CODE=%{http_code} http://127.0.0.1:8000/api/health || true",
+    "echo ==== BACKEND RESPONSE ====",
+    "sudo cat /tmp/backend.txt 2>/dev/null || true",
+    "echo ==== BOOTSTRAP LOG ====",
+    "sudo tail -100 /var/log/nexops-bootstrap.log 2>/dev/null || true",
+    "echo ==== CLOUD INIT LOG ====",
+    "sudo tail -100 /var/log/cloud-init-output.log 2>/dev/null || true"
+  ]
+}

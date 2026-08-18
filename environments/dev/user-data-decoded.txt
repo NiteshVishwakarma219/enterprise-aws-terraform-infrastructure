@@ -1,0 +1,248 @@
+﻿#!/bin/bash
+
+set -e
+
+echo "=========================================="
+echo " NexOps Enterprise Platform Bootstrap"
+echo "=========================================="
+
+# ------------------------------------------------------------
+# Update operating system
+# ------------------------------------------------------------
+
+dnf update -y
+
+
+# ------------------------------------------------------------
+# Install Docker
+# ------------------------------------------------------------
+
+dnf install -y docker
+
+systemctl enable docker
+systemctl start docker
+
+
+# ------------------------------------------------------------
+# Install Nginx
+# ------------------------------------------------------------
+
+dnf install -y nginx
+
+systemctl enable nginx
+
+
+# ------------------------------------------------------------
+# Pull application images
+# ------------------------------------------------------------
+
+docker pull cloudwithnitesh/nexops-backend:1.0.0
+docker pull cloudwithnitesh/nexops-frontend:1.0.0
+
+
+# ------------------------------------------------------------
+# Create application network
+# ------------------------------------------------------------
+
+docker network create nexops-network || true
+
+# ------------------------------------------------------------
+# Retrieve database credentials + JWT secret from Secrets Manager
+# ------------------------------------------------------------
+
+dnf install -y awscli jq curl
+
+SECRET_JSON=$(aws secretsmanager get-secret-value \
+  --secret-id "nexops-dev-db-credentials" \
+  --region "us-east-1" \
+  --query SecretString \
+  --output text)
+
+DB_USERNAME=$(echo "$SECRET_JSON" | jq -r '.username')
+DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.password')
+export DB_PASSWORD
+DB_DATABASE=$(echo "$SECRET_JSON" | jq -r '.database')
+DB_HOST=$(echo "$SECRET_JSON" | jq -r '.host')
+DB_PORT=$(echo "$SECRET_JSON" | jq -r '.port')
+JWT_SECRET=$(echo "$SECRET_JSON" | jq -r '.jwt_secret')
+
+ADMIN_DEMO_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.admin_demo')
+HR_DEMO_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.hr_demo')
+MANAGER_DEMO_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.manager_demo')
+EMPLOYEE_DEMO_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.employee_demo')
+
+# The generated password uses only URI-safe characters (-_.~).
+DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
+# ------------------------------------------------------------
+# Start backend
+# ------------------------------------------------------------
+
+docker rm -f nexops-backend || true
+
+docker run -d \
+  --name nexops-backend \
+  --restart unless-stopped \
+  --network nexops-network \
+  --network-alias backend \
+  -p 8000:8000 \
+  -e NODE_ENV="production" \
+  -e PORT="8000" \
+  -e DATABASE_URL="$DATABASE_URL" \
+  -e JWT_SECRET="$JWT_SECRET" \
+  cloudwithnitesh/nexops-backend:1.0.0
+
+# ------------------------------------------------------------
+# Start frontend
+# ------------------------------------------------------------
+
+docker rm -f nexops-frontend || true
+
+docker run -d \
+  --name nexops-frontend \
+  --restart unless-stopped \
+  --network nexops-network \
+  -p 3000:80 \
+  cloudwithnitesh/nexops-frontend:1.0.0
+
+
+# ------------------------------------------------------------
+# Wait for backend to be ready, then ensure the DB schema exists
+# and the four demo accounts are present. Both operations below
+# are idempotent (safe to run on every boot, on every instance,
+# without duplicating or corrupting data):
+#   - `prisma db push` only creates what's missing
+#   - the seed step uses `upsert`, so re-running it just
+#     confirms the demo accounts already exist rather than
+#     erroring or duplicating them
+#
+# This is a stopgap until the app repo has real committed Prisma
+# migrations + a real seed script (see docs/INCIDENT_POSTMORTEM.md)
+# ------------------------------------------------------------
+
+echo "Waiting for backend HTTP health endpoint..."
+BACKEND_READY=false
+for i in $(seq 1 60); do
+  if curl -fsS http://127.0.0.1:8000/api/health >/dev/null 2>&1; then
+    BACKEND_READY=true
+    break
+  fi
+  sleep 3
+done
+
+if [ "$BACKEND_READY" != "true" ]; then
+  echo "ERROR: Backend did not become healthy."
+  docker logs nexops-backend || true
+  exit 1
+fi
+
+echo "Ensuring database schema is up to date..."
+docker exec nexops-backend npx prisma db push --skip-generate
+
+echo "Ensuring demo accounts exist..."
+docker exec \
+  -e ADMIN_DEMO_PASSWORD="$ADMIN_DEMO_PASSWORD" \
+  -e HR_DEMO_PASSWORD="$HR_DEMO_PASSWORD" \
+  -e MANAGER_DEMO_PASSWORD="$MANAGER_DEMO_PASSWORD" \
+  -e EMPLOYEE_DEMO_PASSWORD="$EMPLOYEE_DEMO_PASSWORD" \
+  nexops-backend node -e "
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+
+const users = [
+  { email: 'admin@nexops.com', password: process.env.ADMIN_DEMO_PASSWORD, fullName: 'System Admin', role: 'admin' },
+  { email: 'hr@nexops.com', password: process.env.HR_DEMO_PASSWORD, fullName: 'HR Manager', role: 'hr' },
+  { email: 'manager@nexops.com', password: process.env.MANAGER_DEMO_PASSWORD, fullName: 'Team Manager', role: 'manager' },
+  { email: 'employee@nexops.com', password: process.env.EMPLOYEE_DEMO_PASSWORD, fullName: 'Demo Employee', role: 'employee' },
+];
+
+(async () => {
+  for (const u of users) {
+    const hashed = await bcrypt.hash(u.password, 12);
+    try {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: { password: hashed, fullName: u.fullName, role: u.role, isActive: true },
+        create: { email: u.email, password: hashed, fullName: u.fullName, role: u.role, isActive: true },
+      });
+    } catch (e) {
+      // Two ASG instances may bootstrap at the same time. If another
+      // instance wins the unique-email race, update the existing row.
+      if (e?.code === 'P2002') {
+        await prisma.user.update({
+          where: { email: u.email },
+          data: { password: hashed, fullName: u.fullName, role: u.role, isActive: true },
+        });
+      } else {
+        throw e;
+      }
+    }
+  }
+  await prisma.$disconnect();
+  console.log('Demo accounts ensured.');
+})().catch((e) => { console.error(e); process.exit(1); });
+"
+
+# ------------------------------------------------------------
+# Configure Nginx
+# ------------------------------------------------------------
+
+cat > /etc/nginx/conf.d/nexops.conf <<'EOF'
+
+server {
+    listen 80 default_server;
+
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8000;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+EOF
+
+
+# ------------------------------------------------------------
+# Validate and start Nginx
+# ------------------------------------------------------------
+
+nginx -t
+
+systemctl restart nginx
+
+
+# ------------------------------------------------------------
+# Log bootstrap completion
+# ------------------------------------------------------------
+
+echo "NexOps application bootstrap completed." \
+  > /var/log/nexops-bootstrap.log

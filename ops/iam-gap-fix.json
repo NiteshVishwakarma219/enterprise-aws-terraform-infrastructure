@@ -1,0 +1,1 @@
+{"Version":"2012-10-17","Statement":[{"Sid":"IAMGapFix","Effect":"Allow","Action":["iam:TagPolicy","iam:UntagPolicy","iam:TagRole","iam:UntagRole","iam:ListRolePolicies","iam:GetRolePolicy","iam:PutRolePolicy","iam:DeleteRolePolicy"],"Resource":"*"}]}
