@@ -351,6 +351,6 @@ This app's Prisma schema expects both `DATABASE_URL` and `DIRECT_URL`. Since thi
 
 <div align="center">
 
-Built by **Satyam** as part of a multi-project cloud/DevOps portfolio.
+Built by **Nitesh** as part of a multi-project cloud/DevOps portfolio.
 
 </div>
