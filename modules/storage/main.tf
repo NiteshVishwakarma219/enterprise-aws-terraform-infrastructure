@@ -3,10 +3,10 @@
 # ============================================================
 
 resource "aws_s3_bucket" "uploads" {
-  bucket = "${var.name_prefix}-uploads"
+  bucket = "${var.name_prefix}-uploads-920235988251"
 
   tags = {
-    Name = "${var.name_prefix}-uploads"
+    Name = "${var.name_prefix}-uploads-920235988251"
     Tier = "storage"
   }
 }

@@ -35,19 +35,8 @@ output "sns_alerts_topic_arn" {
 }
 
 output "application_url" {
-  description = "HTTPS application URL when a custom domain is enabled; otherwise null."
-  value       = module.route53.application_url
-}
-
-output "route53_name_servers" {
-  description = "Route 53 authoritative name servers to set at GoDaddy."
-  value       = module.route53.name_servers
-}
-
-output "acm_certificate_arn" {
-  description = "ACM certificate ARN used by the HTTPS listener."
-  value       = module.route53.certificate_arn
-  sensitive   = true
+  description = "Application URL served directly by the ALB (HTTP)."
+  value       = "http://${module.compute.alb_dns_name}"
 }
 
 output "demo_admin_email" {

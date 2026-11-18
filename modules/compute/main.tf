@@ -296,11 +296,11 @@ resource "aws_autoscaling_group" "app" {
   target_group_arns   = [aws_lb_target_group.app.arn]
 
   min_size         = var.asg_min_size
-  max_size         = var.asg_max_size
+  max_size         = var.asg_max_size   
   desired_capacity = var.asg_desired_capacity
 
   health_check_type         = "EC2"
-  health_check_grace_period = 480
+  health_check_grace_period = 600
 
   launch_template {
     id      = aws_launch_template.app.id

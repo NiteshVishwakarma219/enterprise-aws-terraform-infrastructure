@@ -49,7 +49,7 @@ Deploys and runs the **Enterprise Employee Management System (EEMS)** — a cont
 | **Serverless** | AWS Lambda, EventBridge |
 | **Monitoring** | CloudWatch Alarms, SNS (email alerts) |
 | **Security** | IAM least-privilege roles, Security Groups, SSM Session Manager (no SSH) |
-| **DNS / TLS** | Route 53, ACM DNS validation, HTTPS |\n| **Access Control** | AWS CLI, IAM users/policies |
+| **Entry point** | Application Load Balancer (HTTP, ALB DNS name) |\n| **Access Control** | AWS CLI, IAM users/policies |
 
 ---
 
@@ -57,7 +57,7 @@ Deploys and runs the **Enterprise Employee Management System (EEMS)** — a cont
 
 See [`diagrams/architecture.md`](diagrams/architecture.md) for the full diagram and network layout breakdown.
 
-**High-level flow:** GoDaddy-registered domain → Route 53 authoritative DNS → ACM TLS certificate → HTTPS Application Load Balancer (public subnets) → Auto Scaling Group of EC2 instances (private app subnets, min 2 for high availability) → Nginx reverse proxy → Docker Hub EEMS images (React frontend + Node.js backend) → RDS PostgreSQL (private DB subnets) + S3 (uploads) + Secrets Manager (credentials). If no custom domain is configured yet, the ALB DNS name remains available for validation.
+**High-level flow:** Application Load Balancer (public subnets) → Auto Scaling Group of EC2 instances (private app subnets, min 2 for high availability) → Nginx reverse proxy → Docker Hub EEMS images (React frontend + Node.js backend) → RDS PostgreSQL (private DB subnets) + S3 (uploads) + Secrets Manager (credentials). The app is accessed via the ALB DNS name (no Route 53).
 
 <p align="center">
   <img src="screenshots/17-VPC.png" alt="VPC and networking layout" width="800">
@@ -161,49 +161,7 @@ cp terraform.tfvars.example terraform.tfvars
 
 Fill in `alert_email`, `db_name`, `db_username`, `backend_image`, and `frontend_image`.
 
-For a GoDaddy-registered domain, for example `nitesh.shop`, set:
-
-```hcl
-route53_zone_name = "nitesh.shop"
-domain_name       = "nitesh.shop"
-```
-
-The Terraform stack will create the Route 53 hosted zone, ACM certificate, DNS validation records, HTTPS listener, HTTP→HTTPS redirect, and ALB alias record.
-
-**GoDaddy delegation is the only manual DNS step.** Because ACM DNS validation needs the Route 53 zone to be authoritative, create the hosted zone first:
-
-```bash
-terraform apply -target=module.route53.aws_route53_zone.this[0]
-terraform output route53_name_servers
-```
-
-Copy the four Route 53 name servers into the GoDaddy domain's **Nameservers** settings and choose the option to use custom nameservers. Do not create a separate application A record in GoDaddy; Route 53 becomes authoritative.
-
-**Wait for the nameserver change to actually propagate before applying again.** This is the single most common source of confusion in this whole deployment — GoDaddy's panel can say "saved" instantly while the change itself takes anywhere from 15 minutes to a few hours to be visible globally. Don't skip this check:
-
-```bash
-# Repeat every 15-30 minutes until this matches the 4 nameservers
-# from `terraform output route53_name_servers` above
-nslookup -type=NS nitesh.shop 8.8.8.8
-```
-
-Only once that matches should you continue. If you re-run `terraform apply` while ACM is still waiting on DNS validation and your network drops mid-wait, you can end up with a stuck state lock and/or (if you re-run the hosted-zone-creation step a second time) a **second, duplicate hosted zone** that GoDaddy isn't actually delegated to — see [Troubleshooting](#-troubleshooting--things-that-actually-went-wrong) below if that happens to you.
-
-After DNS delegation is confirmed propagated, run the normal deployment:
-
-```bash
-terraform apply
-```
-
-Terraform will then create the ACM certificate, validate it through Route 53, attach HTTPS to the ALB, and create the ALB alias record. This step alone can take 5-10+ minutes (ACM DNS validation isn't instant even with correct delegation) — let it run uninterrupted; don't switch networks or close the terminal mid-apply.
-
-Finally:
-
-```bash
-terraform output application_url
-```
-
-If you do not own a domain yet, leave both DNS variables empty and the stack will run through the ALB DNS name over HTTP. You can enable the domain later with a Terraform apply.
+No domain variables are needed. The stack runs on the ALB DNS name over HTTP; there is no Route 53 or ACM.
 
 ### 4. Deploy the main infrastructure
 
@@ -230,45 +188,23 @@ Type `yes` and wait — RDS is the slowest resource (~5 minutes).
 
 ---
 
-## 🌐 Custom Domain and HTTPS
+## 🌐 Accessing the Application (ALB only)
 
-When `domain_name` is set, the deployment uses:
+Traffic reaches the app directly through the public Application Load Balancer:
 
 ```text
-GoDaddy registrar
-      │
-      │ nameservers delegated to Route 53
-      ▼
-Route 53 Hosted Zone
-      │
-      ├── A/ALIAS → ALB
-      └── ACM DNS validation
-                 │
-                 ▼
-        ACM TLS Certificate
-                 │
-                 ▼
-       HTTPS ALB :443
-                 │
-          HTTP :80 redirects
-                 │
-                 ▼
-        Private EC2 ASG
+Internet → ALB :80 (public subnets) → Private EC2 ASG → Nginx → containers → RDS / S3
 ```
 
-The application URL is:
+Get the URL with:
 
 ```bash
 terraform output application_url
 ```
 
-For example:
+Example: `http://nexops-dev-alb-123456789.us-east-1.elb.amazonaws.com`
 
-```text
-https://nitesh.shop
-```
-
-Route 53 and ACM are optional until you purchase the domain; no domain credentials or GoDaddy API tokens are stored in Terraform.
+Route 53, ACM and a custom domain are not used. If you want HTTPS/a custom domain later, add an ACM certificate + HTTPS listener to the ALB and a DNS record at your DNS provider.
 
 ## 🔍 Verify It's Actually Live
 
@@ -281,20 +217,13 @@ Route 53 and ACM are optional until you purchase the domain; no domain credentia
 **Check the Load Balancer itself:**
 <p align="center"><img src="screenshots/15-Load-balancer.png" alt="Application Load Balancer" width="700"></p>
 
-**Check Route 53 is resolving your custom domain to the ALB:**
-<p align="center"><img src="screenshots/nitesh.shop.png" alt="Route 53 hosted zone resolving nitesh.shop to the ALB, and https://nitesh.shop loading in the browser" width="700"></p>
-
-Confirm this two ways before trusting the browser alone:
+**Check the application through the ALB:**
 
 ```bash
-# 1. Nameservers the internet actually sees should match `terraform output route53_name_servers`
-nslookup -type=NS nitesh.shop 8.8.8.8
-
-# 2. The domain should resolve to an IP once nameservers match
-nslookup nitesh.shop 8.8.8.8
+curl -i $(terraform output -raw application_url)/api/health
 ```
 
-Then open `https://nitesh.shop` (or run `terraform output application_url`) in a browser.
+Then open `terraform output application_url` in a browser.
 
 **Check RDS PostgreSQL is running:**
 <p align="center"><img src="screenshots/16-rds-postgresql.png" alt="RDS PostgreSQL instance" width="700"></p>
@@ -341,8 +270,8 @@ The state backend (`bootstrap/state-backend`) is left in place intentionally (`p
 
 Real errors hit during first deployment, in the order you're likely to hit them. `docs/INCIDENT_POSTMORTEM.md` and `docs/TROUBLESHOOTING.md` cover more; this is the short version for the most common ones.
 
-### `terraform apply` fails with `dial tcp: lookup ...: no such host` (for S3 / ACM / STS)
-Your machine's own network/DNS dropped mid-apply — not an AWS or code problem. This project's apply can take 8-10+ minutes uninterrupted (ACM validation alone can take 5+ minutes), so an unstable Wi-Fi connection, VPN, or laptop network-adapter sleep setting will surface as this exact error at a different AWS service each time.
+### `terraform apply` fails with `dial tcp: lookup ...: no such host` (for S3 / STS)
+Your machine's own network/DNS dropped mid-apply — not an AWS or code problem. This project's apply can take 8-10+ minutes uninterrupted, so an unstable Wi-Fi connection, VPN, or laptop network-adapter sleep setting will surface as this exact error at a different AWS service each time.
 - Test with `ping 8.8.8.8 -n 20` — any packet loss confirms it's your connection, not AWS.
 - Disable Wi-Fi adapter power saving (Control Panel → Network Connections → adapter Properties → Power Management → uncheck "allow the computer to turn off this device").
 - Disconnect any VPN/proxy for the duration of the apply.
@@ -360,15 +289,6 @@ A secret from an earlier interrupted run is stuck in its recovery window. Since 
 ```bash
 aws secretsmanager delete-secret --secret-id nexops-dev-db-credentials --force-delete-without-recovery
 ```
-
-### ACM certificate stuck on `PENDING_VALIDATION`
-```bash
-aws acm describe-certificate --certificate-arn <arn> --region us-east-1 --query "Certificate.Status"
-```
-If it's not `ISSUED`, it's almost always because GoDaddy's nameservers haven't propagated to the Route 53 zone yet — see the propagation check in step 3 above. Give it time; there's nothing to configure further once the nameservers genuinely match.
-
-### Two hosted zones exist for the same domain (`aws route53 list-hosted-zones` shows duplicates)
-Happens if the hosted-zone-creation step gets re-run after an interrupted apply. Only one of them is what Terraform actually manages (check with `terraform state list | findstr route53_zone`), and only one is what GoDaddy is delegated to — they need to be the **same** zone. Point GoDaddy at whichever nameservers `terraform output route53_name_servers` reports, wait for propagation, then delete the orphaned zone (`aws route53 delete-hosted-zone --id <orphan-zone-id>`) once the site is confirmed working, so it doesn't cause confusion again.
 
 ### ASG shows healthy but the target group never does / instances keep cycling / browser shows 502
 Check `HealthCheckType` on the ASG:

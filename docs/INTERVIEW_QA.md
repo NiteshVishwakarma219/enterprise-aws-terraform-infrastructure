@@ -40,11 +40,11 @@ front door you'd add an ACM certificate, an HTTPS listener with an HTTP→HTTPS 
 and consider AWS WAF in front of the ALB.
 
 
-## Route 53 / ACM
+## Entry point
 
-**Q: How does the custom GoDaddy domain reach the application?**
+**Q: How do users reach the application?**
 
-A: GoDaddy is used as the registrar. The domain's nameservers are delegated to an authoritative Route 53 hosted zone. Route 53 points the hostname to the ALB using an alias record. ACM performs DNS validation and provides the TLS certificate to the ALB. Port 80 redirects to HTTPS on port 443.
+A: Through the public Application Load Balancer's DNS name over HTTP. Route 53 and ACM are intentionally not used; a custom domain and HTTPS can be added later.
 
 **Q: Why is the application not exposed directly from EC2?**
 

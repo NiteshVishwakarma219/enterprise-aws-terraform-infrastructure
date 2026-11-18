@@ -53,22 +53,6 @@ variable "db_subnet_cidrs" {
 }
 
 # --------------------------------------------------------------
-# DNS / HTTPS
-# --------------------------------------------------------------
-
-variable "route53_zone_name" {
-  description = "Route 53 hosted zone name, normally your purchased GoDaddy domain (e.g. nitesh.shop)"
-  type        = string
-  default     = ""
-}
-
-variable "domain_name" {
-  description = "Public application hostname. Leave empty to use the ALB DNS name without HTTPS."
-  type        = string
-  default     = ""
-}
-
-# --------------------------------------------------------------
 # Compute
 # --------------------------------------------------------------
 
@@ -126,4 +110,27 @@ variable "multi_az" {
   description = "Deploy RDS as Multi-AZ (leave false for dev to save cost)"
   type        = bool
   default     = false
+}
+variable "admin_demo_password" {
+  description = "Permanent demo password for admin@nexops.com"
+  type        = string
+  sensitive   = true
+}
+
+variable "hr_demo_password" {
+  description = "Permanent demo password for hr@nexops.com"
+  type        = string
+  sensitive   = true
+}
+
+variable "manager_demo_password" {
+  description = "Permanent demo password for manager@nexops.com"
+  type        = string
+  sensitive   = true
+}
+
+variable "employee_demo_password" {
+  description = "Permanent demo password for employee@nexops.com"
+  type        = string
+  sensitive   = true
 }

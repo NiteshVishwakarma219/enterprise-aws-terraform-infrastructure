@@ -1,0 +1,5 @@
+﻿{
+  "commands": [
+    "docker exec nexops-backend node /tmp/fix-users.js"
+  ]
+}

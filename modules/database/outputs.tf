@@ -24,7 +24,7 @@ output "database_secret_arn" {
 }
 
 output "demo_admin_password" {
-  description = "Generated demo administrator password. Sensitive."
-  value       = random_password.admin_demo.result
+  description = "Default demo administrator password. Sensitive."
+  value       = var.admin_demo_password
   sensitive   = true
 }

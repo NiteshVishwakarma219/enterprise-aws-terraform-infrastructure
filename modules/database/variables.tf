@@ -52,3 +52,31 @@ variable "skip_final_snapshot" {
   type        = bool
   default     = true
 }
+
+variable "admin_demo_password" {
+  description = "Default password for the admin demo user"
+  type        = string
+  sensitive   = true
+  default     = "Admin@NexOps2026"
+}
+
+variable "hr_demo_password" {
+  description = "Default password for the HR demo user"
+  type        = string
+  sensitive   = true
+  default     = "HrPortal@2026"
+}
+
+variable "manager_demo_password" {
+  description = "Default password for the manager demo user"
+  type        = string
+  sensitive   = true
+  default     = "Manager@2026"
+}
+
+variable "employee_demo_password" {
+  description = "Default password for the employee demo user"
+  type        = string
+  sensitive   = true
+  default     = "Employee@2026"
+}

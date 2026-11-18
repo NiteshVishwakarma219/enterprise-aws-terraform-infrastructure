@@ -40,46 +40,19 @@ Edit `terraform.tfvars`.
 terraform init -backend-config="bucket=<STATE_BUCKET_NAME>"
 ```
 
-## 6. If you already own a GoDaddy domain
+## 6. Access (ALB only — no Route 53 / domain)
 
-Set:
-
-```hcl
-route53_zone_name = "yourdomain.com"
-domain_name       = "yourdomain.com"
-```
-
-Then create the Route 53 hosted zone first:
-
-```bash
-terraform apply -target=module.route53.aws_route53_zone.this[0]
-terraform output route53_name_servers
-```
-
-Set those nameservers at GoDaddy.
-
-After delegation:
-
-```bash
-terraform apply
-```
-
-## 7. If you do not own a domain yet
-
-Leave:
-
-```hcl
-route53_zone_name = ""
-domain_name       = ""
-```
-
-Deploy normally and use:
+The application is served directly by the Application Load Balancer over HTTP.
+No Route 53 hosted zone, ACM certificate or custom domain is used.
 
 ```bash
 terraform output alb_dns_name
+terraform output application_url
 ```
 
-## 8. Verify
+Open the `application_url` (`http://<alb-dns-name>`) in a browser.
+
+## 7. Verify
 
 ```bash
 terraform validate
@@ -93,7 +66,6 @@ See:
 
 - `docs/DEPLOYMENT_GUIDE.md`
 - `docs/FIXES_APPLIED.md`
-- `docs/GODADDY_ROUTE53_SETUP.md`
 - `docs/TROUBLESHOOTING.md`
 - `docs/INTERVIEW_QA.md`
 - `diagrams/architecture.md`

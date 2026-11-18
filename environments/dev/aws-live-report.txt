@@ -1,0 +1,57 @@
+﻿================================================================================
+ AWS LIVE ACCESS URLS, SERVICES, COST & ACTIVITY REPORT
+ Account: 920235988251 | Region: us-east-1 | Time: 2026-11-18 13:26:49
+================================================================================
+
+[1. DIRECT ACCESS URLS & DOMAINS]
+  - Load Balancers: (None running)
+
+[2. LOAD BALANCER TARGET HEALTH]
+  (No target groups)
+
+[3. RUNNING SERVICES & EXACT AGE]
+  - EC2 Instance  :  () | Type:  | PrivateIP:  | Age: Unknown
+  - EC2 Instance  :  () | Type:  | PrivateIP:  | Age: Unknown
+  - EC2 Instance  :  () | Type:  | PrivateIP:  | Age: Unknown
+  - EC2 Instance  :  () | Type:  | PrivateIP:  | Age: Unknown
+  - EC2 Instance  :  () | Type:  | PrivateIP:  | Age: Unknown
+  - EC2 Instance  :  () | Type:  | PrivateIP:  | Age: Unknown
+  - S3 Bucket     : nexops-terraform-state-920235988251 | Age: 0d 3h 46m (Since 2026-11-18 04:11 UTC)
+
+[4. CURRENT MONTH SPEND BY SERVICE]
+  - System.Object[]                            : 0.0000 USD
+  - System.Object[]                            : 0.0000 USD
+  - System.Object[]                            : 0.0000 USD
+  TOTAL MONTH-TO-DATE SPEND                    : 0.0000 USD
+
+[5. COMPLETE RECENT ACCOUNT ACTIVITY (LAST 30 EVENTS)]
+  - 2026-11-18 07:57:15 UTC | DescribeInstances            | ec2.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:08 UTC | GetBucketObjectLockConfiguration | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:07 UTC | DescribeTargetGroups         | elasticloadbalancing.amazonaws.com | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:07 UTC | GetBucketEncryption          | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:06 UTC | GetBucketReplication         | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:05 UTC | GetBucketLogging             | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:05 UTC | GetBucketLifecycle           | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:04 UTC | GetBucketRequestPayment      | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:03 UTC | GetAccelerateConfiguration   | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:03 UTC | DescribeDBInstances          | rds.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:02 UTC | GetBucketVersioning          | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:01 UTC | GetBucketWebsite             | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:01 UTC | GetBucketCors                | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:01 UTC | DescribeTimeToLive           | dynamodb.amazonaws.com     | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:00 UTC | DescribeContinuousBackups    | dynamodb.amazonaws.com     | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:00 UTC | DescribeTable                | dynamodb.amazonaws.com     | By: nitesh-terraform-admin
+  - 2026-11-18 07:57:00 UTC | GetBucketAcl                 | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:59 UTC | ListHostedZones              | route53.amazonaws.com      | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:59 UTC | GetBucketPolicy              | s3.amazonaws.com           | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:55 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:54 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:52 UTC | DescribeLoadBalancers        | elasticloadbalancing.amazonaws.com | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:47 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:56:12 UTC | EndSecretVersionDelete       | secretsmanager.amazonaws.com | By: System/Role
+  - 2026-11-18 07:56:12 UTC | StartSecretVersionDelete     | secretsmanager.amazonaws.com | By: System/Role
+  - 2026-11-18 07:56:00 UTC | ListSecrets                  | secretsmanager.amazonaws.com | By: nitesh-terraform-admin
+  - 2026-11-18 07:55:45 UTC | DescribeVpcs                 | ec2.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:55:42 UTC | DescribeAddresses            | ec2.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:55:31 UTC | DescribeDBSubnetGroups       | rds.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 07:55:28 UTC | DescribeMetricFilters        | logs.amazonaws.com         | By: root

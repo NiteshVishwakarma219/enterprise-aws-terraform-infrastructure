@@ -41,16 +41,20 @@ module "storage" {
 module "database" {
   source = "../../modules/database"
 
-  name_prefix          = local.name_prefix
-  db_subnet_ids        = module.vpc.db_subnet_ids
-  db_security_group_id = module.security.db_security_group_id
-  db_name              = var.db_name
-  db_username          = var.db_username
-  db_instance_class    = var.db_instance_class
-  multi_az             = var.multi_az
+  name_prefix            = local.name_prefix
+  db_subnet_ids          = module.vpc.db_subnet_ids
+  db_security_group_id   = module.security.db_security_group_id
+  db_name                = var.db_name
+  db_username            = var.db_username
+  db_instance_class      = var.db_instance_class
+  multi_az               = var.multi_az
+  admin_demo_password    = var.admin_demo_password
+  hr_demo_password       = var.hr_demo_password
+  manager_demo_password  = var.manager_demo_password
+  employee_demo_password = var.employee_demo_password
 }
 
-# ============================================================
+# ==================================e==========================
 # IAM (Lambda execution role)
 # ============================================================
 
@@ -82,39 +86,10 @@ module "compute" {
   uploads_bucket_arn   = module.storage.bucket_arn
   aws_region           = var.aws_region
 
-  https_enabled       = var.domain_name != ""
-  acm_certificate_arn = module.route53.certificate_arn
-
   instance_type        = var.instance_type
   asg_min_size         = var.asg_min_size
   asg_max_size         = var.asg_max_size
   asg_desired_capacity = var.asg_desired_capacity
-}
-
-# ============================================================
-# ROUTE 53 + ACM (optional; enabled when domain_name is set)
-# ============================================================
-
-module "route53" {
-  source = "../../modules/route53"
-
-  enabled     = var.domain_name != ""
-  zone_name   = var.route53_zone_name
-  domain_name = var.domain_name
-}
-
-resource "aws_route53_record" "application" {
-  count = var.domain_name != "" ? 1 : 0
-
-  zone_id = module.route53.zone_id
-  name    = var.domain_name
-  type    = "A"
-
-  alias {
-    name                   = module.compute.alb_dns_name
-    zone_id                = module.compute.alb_zone_id
-    evaluate_target_health = true
-  }
 }
 
 # ============================================================

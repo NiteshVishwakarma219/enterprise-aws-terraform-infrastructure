@@ -1,0 +1,83 @@
+﻿================================================================================
+ AWS FULL ACCOUNT AUDIT & ACTIVITY REPORT
+ Account ID : 920235988251 | Region: us-east-1
+ Generated  : 2026-11-18 10:02:03
+================================================================================
+
+[1. CURRENT MONTH COST & USAGE BY SERVICE]
+  - AWS Data Transfer                          : 0.0000 USD
+  - AWS Glue                                   : 0.0000 USD
+  - AWS Key Management Service                 : 0.0000 USD
+  - AWS Lambda                                 : 0.0000 USD
+  - AWS Secrets Manager                        : 0.0000 USD
+  - EC2 - Other                                : 0.0000 USD
+  - Amazon Elastic Compute Cloud - Compute     : 0.0000 USD
+  - Amazon Elastic Load Balancing              : 0.0000 USD
+  - Amazon Simple Notification Service         : 0.0000 USD
+  - Amazon Simple Storage Service              : 0.0000 USD
+  - Amazon Virtual Private Cloud               : 0.0000 USD
+  - AmazonCloudWatch                           : 0.0000 USD
+  - Tax                                        : 0.0000 USD
+  ------------------------------------------------------------------
+  TOTAL MONTH-TO-DATE SPEND                    : 0.0000 USD
+
+[2. EC2 INSTANCES]
+  - i-0292ba6a62fa98f10 | Name: nexops-dev-app | Type: t3.micro | State: running | Running for: 0 days, 0 hrs, 15 mins (Since 2026-11-18 04:16 UTC)
+  -  | Name:  | Type:  | State:  | Running for: Unknown age
+  -  | Name:  | Type:  | State:  | Running for: Unknown age
+  -  | Name:  | Type:  | State:  | Running for: Unknown age
+
+[3. LOAD BALANCERS (ALB/NLB)]
+  - nexops-dev-alb | State: active | Running for: 0 days, 0 hrs, 15 mins (Since 2026-11-18 04:16 UTC)
+
+[4. RDS DATABASES]
+  - nexops-dev-db (postgres / db.t3.micro) | Status: available | Running for: 0 days, 0 hrs, 12 mins (Since 2026-11-18 04:19 UTC)
+
+[5. LAMBDA FUNCTIONS]
+  (None)
+
+[6. S3 BUCKETS (ALL REGIONS)]
+  - nexops-terraform-state-920235988251 | Age: 0 days, 0 hrs, 21 mins (Since 2026-11-18 04:11 UTC)
+
+[7. DYNAMODB TABLES]
+  - nexops-terraform-locks | Age: 0 days, 0 hrs, 21 mins (Since 2026-11-18 04:11 UTC)
+
+[8. VPCs & NAT GATEWAYS]
+  - VPC: vpc-00da80bd4aa3c1bf3 | Name:  | CIDR: 172.31.0.0/16 | DefaultVPC: True
+  - VPC: vpc-030fa9253ad33a5a4 | Name: nexops-dev-vpc | CIDR: 10.0.0.0/16 | DefaultVPC: False
+  - NAT Gateway: nat-0ef699b22fdcf2e4e | Running for: 0 days, 0 hrs, 15 mins (Since 2026-11-18 04:16 UTC)
+
+[9. CUSTOM IAM ROLES]
+  - greentech-climate-service-role-8uoq5l3z | Age: 54 days, 15 hrs, 48 mins (Since 2026-09-24 12:44 UTC)
+  - greentech-climate-service-role-b532zubn | Age: 55 days, 14 hrs, 56 mins (Since 2026-09-23 13:35 UTC)
+  - greentech-climate-service-role-zp7mfzp6 | Age: 55 days, 14 hrs, 17 mins (Since 2026-09-23 14:14 UTC)
+
+[10. CLOUDWATCH LOG GROUPS]
+  - /aws/lambda/greentech-climate-service (0 MB) | Age: 55 days, 14 hrs, 50 mins (Since 2026-09-23 13:42 UTC)
+
+[11. RECENT ACCOUNT ACTIVITY (LAST 25 CLOUDTRAIL EVENTS)]
+  - 2026-11-18 04:30:50 UTC | DescribeInstances            | ec2.amazonaws.com          | By: AutoScaling
+  - 2026-11-18 04:30:31 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:30:31 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:30:31 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:30:31 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:30:30 UTC | DescribeInstances            | ec2.amazonaws.com          | By: AutoScaling
+  - 2026-11-18 04:30:30 UTC | DescribeInstanceAttribute    | ec2.amazonaws.com          | By: AutoScaling
+  - 2026-11-18 04:30:20 UTC | DescribeTargetHealth         | elasticloadbalancing.amazonaws.com | By: AutoScaling
+  - 2026-11-18 04:30:20 UTC | AssumeRole                   | sts.amazonaws.com          | By: System/Role
+  - 2026-11-18 04:30:17 UTC | AssumeRole                   | sts.amazonaws.com          | By: System/Role
+  - 2026-11-18 04:30:17 UTC | DescribeTargetGroupAttributes | elasticloadbalancing.amazonaws.com | By: AutoScaling
+  - 2026-11-18 04:30:17 UTC | DeregisterTargets            | elasticloadbalancing.amazonaws.com | By: AutoScaling
+  - 2026-11-18 04:30:16 UTC | DescribeLaunchTemplateVersions | ec2.amazonaws.com          | By: AutoScaling
+  - 2026-11-18 04:30:09 UTC | PutMetricAlarm               | monitoring.amazonaws.com   | By: AutoScaling
+  - 2026-11-18 04:30:09 UTC | AssumeRole                   | sts.amazonaws.com          | By: System/Role
+  - 2026-11-18 04:29:57 UTC | AssumeRole                   | sts.amazonaws.com          | By: System/Role
+  - 2026-11-18 04:29:57 UTC | GetResource                  | cloudcontrolapi.amazonaws.com | By: resource-explorer-2
+  - 2026-11-18 04:29:57 UTC | DescribeRule                 | events.amazonaws.com       | By: resource-explorer-2
+  - 2026-11-18 04:29:25 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:29:24 UTC | GetCallerIdentity            | sts.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:29:23 UTC | DeletePolicy                 | iam.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:29:21 UTC | ListPolicyVersions           | iam.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:29:19 UTC | DeletePolicy                 | iam.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:29:17 UTC | ListPolicyVersions           | iam.amazonaws.com          | By: nitesh-terraform-admin
+  - 2026-11-18 04:29:15 UTC | DeletePolicy                 | iam.amazonaws.com          | By: nitesh-terraform-admin

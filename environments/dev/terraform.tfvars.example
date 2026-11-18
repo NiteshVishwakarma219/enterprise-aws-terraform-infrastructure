@@ -14,10 +14,3 @@ frontend_image = "cloudwithnitesh/nexops-frontend:1.0.0"
 db_name     = "nexops"
 db_username = "nexopsadmin"
 
-# Optional custom domain.
-# Leave empty until you own the domain.
-# If your GoDaddy domain is nitesh.shop, use:
-# route53_zone_name = "nitesh.shop"
-# domain_name       = "nitesh.shop"
-route53_zone_name = ""
-domain_name       = ""

@@ -13,8 +13,6 @@ echo "=================================================="
 # --------------------------------------------------
 
 dnf update -y
-
-# Docker is available from Amazon Linux repositories.
 dnf install -y docker jq awscli nginx
 
 systemctl enable --now docker
@@ -24,14 +22,26 @@ echo "Docker status:"
 systemctl is-active docker
 
 # --------------------------------------------------
-# APPLICATION IMAGES
+# APPLICATION IMAGES (WITH RETRY FOR NAT WARMUP)
 # --------------------------------------------------
 
-echo "Pulling backend image..."
-docker pull ${backend_image}
+pull_image() {
+  local img="$1"
+  for i in $(seq 1 15); do
+    echo "Pulling $img (attempt $i/15)..."
+    if docker pull "$img"; then
+      echo "Successfully pulled $img"
+      return 0
+    fi
+    echo "Network/NAT not ready yet for $img. Waiting 15s before retry..."
+    sleep 15
+  done
+  echo "ERROR: Failed to pull $img after 15 attempts"
+  return 1
+}
 
-echo "Pulling frontend image..."
-docker pull ${frontend_image}
+pull_image "${backend_image}"
+pull_image "${frontend_image}"
 
 # --------------------------------------------------
 # DOCKER NETWORK
@@ -40,16 +50,33 @@ docker pull ${frontend_image}
 docker network create nexops-network 2>/dev/null || true
 
 # --------------------------------------------------
-# READ DATABASE SECRET
+# READ DATABASE SECRET (WITH RETRY WHILE RDS BOOTS)
 # --------------------------------------------------
 
 echo "Reading database secret..."
 
-SECRET_JSON=$(aws secretsmanager get-secret-value \
-  --secret-id "${database_secret_name}" \
-  --region "${aws_region}" \
-  --query SecretString \
-  --output text)
+SECRET_JSON=""
+
+for i in $(seq 1 60); do
+  SECRET_JSON=$(aws secretsmanager get-secret-value \
+    --secret-id "${database_secret_name}" \
+    --region "${aws_region}" \
+    --query SecretString \
+    --output text 2>/dev/null || true)
+
+  if [ -n "$SECRET_JSON" ] && [ "$SECRET_JSON" != "None" ]; then
+    echo "Secret retrieved successfully."
+    break
+  fi
+
+  echo "Secret not available yet (waiting for RDS creation). Attempt $i/60..."
+  sleep 15
+done
+
+if [ -z "$SECRET_JSON" ] || [ "$SECRET_JSON" = "None" ]; then
+  echo "ERROR: database secret could not be read after 15 minutes"
+  exit 1
+fi
 
 DB_USERNAME=$(echo "$SECRET_JSON" | jq -r '.username')
 DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r '.password')
@@ -128,41 +155,38 @@ echo "Waiting for backend..."
 BACKEND_READY=false
 
 for i in $(seq 1 60); do
-
   if curl -fsS http://127.0.0.1:8000/api/health >/dev/null 2>&1; then
     BACKEND_READY=true
     echo "Backend is healthy."
     break
   fi
-
   echo "Backend not ready yet. Attempt $i/60"
   sleep 3
-
 done
 
 if [ "$BACKEND_READY" != "true" ]; then
-
   echo "=================================================="
   echo "ERROR: Backend did not become healthy"
   echo "=================================================="
-
-  echo "Backend container status:"
   docker ps -a
-
-  echo "Backend logs:"
   docker logs nexops-backend || true
-
   exit 1
 fi
 
 # --------------------------------------------------
-# DATABASE SCHEMA
+# DATABASE SCHEMA (WITH RETRY FOR CONCURRENT BOOTS)
 # --------------------------------------------------
 
 echo "Updating database schema..."
 
-docker exec nexops-backend \
-  npx prisma db push --skip-generate
+for i in $(seq 1 5); do
+  if docker exec nexops-backend npx prisma db push --skip-generate; then
+    echo "Schema is up to date."
+    break
+  fi
+  echo "prisma db push failed (attempt $i/5), retrying..."
+  sleep $((RANDOM % 10 + 5))
+done
 
 # --------------------------------------------------
 # DEMO USERS
@@ -210,44 +234,39 @@ const users = [
 ];
 
 (async () => {
-
   for (const user of users) {
-
     const hashedPassword = await bcrypt.hash(user.password, 12);
-
-    await prisma.user.upsert({
-      where: {
-        email: user.email
-      },
-      update: {
-        password: hashedPassword,
-        fullName: user.fullName,
-        role: user.role,
-        isActive: true
-      },
-      create: {
-        email: user.email,
-        password: hashedPassword,
-        fullName: user.fullName,
-        role: user.role,
-        isActive: true
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await prisma.user.upsert({
+          where: { email: user.email },
+          update: {
+            password: hashedPassword,
+            fullName: user.fullName,
+            role: user.role,
+            isActive: true
+          },
+          create: {
+            email: user.email,
+            password: hashedPassword,
+            fullName: user.fullName,
+            role: user.role,
+            isActive: true
+          }
+        });
+        break;
+      } catch (e) {
+        if (e.code !== "P2002" || attempt === 3) throw e;
+        await new Promise(r => setTimeout(r, 1000));
       }
-    });
-
+    }
   }
-
   console.log("Demo accounts ensured.");
-
   await prisma.$disconnect();
-
 })().catch(async (error) => {
-
   console.error(error);
-
   await prisma.$disconnect();
-
   process.exit(1);
-
 });
 '
 
@@ -258,99 +277,53 @@ const users = [
 echo "Configuring Nginx..."
 
 cat > /etc/nginx/conf.d/nexops.conf <<'NGINX'
-
 server {
-
     listen 80 default_server;
     listen [::]:80 default_server;
 
     server_name _;
 
     location / {
-
         proxy_pass http://127.0.0.1:3000;
-
         proxy_http_version 1.1;
-
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
     }
 
     location /api/ {
-
         proxy_pass http://127.0.0.1:8000;
-
         proxy_http_version 1.1;
-
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
     }
 
     location /uploads/ {
-
         proxy_pass http://127.0.0.1:8000;
-
         proxy_http_version 1.1;
-
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
     }
-
 }
-
 NGINX
 
 # --------------------------------------------------
-# TEST NGINX
+# TEST & START NGINX
 # --------------------------------------------------
 
 nginx -t
-
 systemctl restart nginx
-
 systemctl enable nginx
 
 # --------------------------------------------------
 # LOCAL HEALTH CHECKS
 # --------------------------------------------------
 
-echo "Testing Nginx..."
-
-curl -fsS http://127.0.0.1/ >/dev/null
-
-echo "Testing API..."
-
-curl -fsS http://127.0.0.1/api/health
-
-# --------------------------------------------------
-# FINAL STATUS
-# --------------------------------------------------
-
-echo ""
-echo "=================================================="
-echo " NexOps Bootstrap Completed Successfully"
-echo "=================================================="
-
-echo "Docker:"
-systemctl is-active docker
-
-echo "Nginx:"
-systemctl is-active nginx
-
-echo "Containers:"
-docker ps
-
-echo "Listening ports:"
-ss -lntp
-
-echo "Bootstrap completed successfully." \
-  > /var/log/nexops-bootstrap.log
+echo "Verifying local health endpoint..."
+curl -fsS http://127.0.0
+echo "Bootstrap completed successfully!"

@@ -39,18 +39,13 @@ This package was reviewed against the EEMS Docker release `1.0.0`.
 
 - ALB targets the Nginx port on the private EC2 instances.
 - Health checks use `/api/health`.
-- When a domain is enabled, HTTP redirects to HTTPS.
-- HTTPS uses an ACM certificate validated through Route 53.
+- ALB serves the app over HTTP on port 80 via its DNS name.
 
-## Route 53 / ACM
+## Route 53 / ACM removed
 
-- Added optional Route 53 hosted zone creation.
-- Added DNS-validated ACM certificate.
-- Added HTTPS ALB listener.
-- Added HTTP → HTTPS redirect.
-- Added Route 53 ALB alias record.
-- Added Terraform outputs for Route 53 nameservers and application URL.
-- GoDaddy remains the registrar; Route 53 becomes authoritative after nameserver delegation.
+- Removed the Route 53 module, hosted zone, ACM certificate, HTTPS listener and alias record.
+- The ALB now has a single HTTP:80 listener forwarding to the target group.
+- Access is via `terraform output application_url` (`http://<alb_dns_name>`).
 
 ## Security
 
