@@ -4,11 +4,11 @@ project_name = "nexops"
 environment  = "dev"
 
 # CloudWatch/SNS alert email
-alert_email = "YOUR_EMAIL@example.com"
+alert_email = "satyamyadavjamirau.p@gmail.com"
 
 # EEMS Docker Hub release
-backend_image  = "cloudwithnitesh/nexops-backend:1.0.0"
-frontend_image = "cloudwithnitesh/nexops-frontend:1.0.0"
+backend_image  = "cloudwithsatyam/my-backend:latest"
+frontend_image = "cloudwithsatyam/my-frontend:latest"
 
 # RDS PostgreSQL
 db_name     = "nexops"

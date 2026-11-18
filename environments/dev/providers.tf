@@ -12,7 +12,7 @@ provider "aws" {
       Project     = "NexOps Enterprise Platform"
       Environment = var.environment
       ManagedBy   = "Terraform"
-      Owner       = "Nitesh"
+      Owner       = "Satyam Yadav"
     }
   }
 }

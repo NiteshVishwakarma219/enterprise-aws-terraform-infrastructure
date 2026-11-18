@@ -62,8 +62,8 @@ SSM Session Manager → EC2 administration
 The EC2 instances pull the frozen EEMS release from Docker Hub:
 
 ```text
-cloudwithnitesh/nexops-frontend:1.0.0
-cloudwithnitesh/nexops-backend:1.0.0
+cloudwithsatyam/my-frontend:latest
+cloudwithsatyam/my-backend:latest
 ```
 
 The AWS project does not duplicate the application source code.
